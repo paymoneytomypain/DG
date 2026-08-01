@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>CATRINA 本人確認（モック）</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="mock-page-body">
+
+  <!-- ヘッダー領域 -->
+  <header class="mock-header">
+    <div class="header-left">
+      <span class="title-sub">DUMMY</span>
+    </div>
+    <div class="header-right">
+      <div class="catrina-logo">
+        <span class="catrina-icon">C</span>
+        <span class="catrina-text">CATRINA Identity</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="mock-main-container">
+    <h1 class="mock-title">CATRINA 本人確認</h1>
+
+    <p class="mock-description">
+      本来はここでQRコード読み取り・スマホアプリとの連携による本人確認プロセスが行われますが、現在スマホ連携ができないため省略しています。<br>
+      下のボタンで、検証結果を手動でシミュレートしてください。 ＜本Pageはﾋﾟﾝﾁイン・ｱｳﾄ,左右ｽﾜｲﾌﾟ非対応です＞
+    </p>
+
+    <!-- QRコードカード領域 -->
+    <div class="mock-qr-card">
+      <div class="qr-image-wrapper">
+        <img src="images/qr-code.png" alt="QR Code" class="mock-qr-img">
+      </div>
+      <div class="qr-instruction">
+        <svg class="phone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        <span>スマートフォンのカメラで<br>QRコードを読み取ってください</span>
+      </div>
+    </div>
+
+    <!-- ボタンエリア -->
+    <div class="mock-button-group">
+      <button class="mock-btn success" onclick="location.href='http://127.0.0.1:2005/success.html?lang=en_US'">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="9 11 12 14 22 4"></polyline>
+        </svg>
+        <span>検証成功（success_url）</span>
+      </button>
+
+      <button class="mock-btn cancel" onclick="location.href='http://127.0.0.1:2005/return.html?lang=en_US'">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>キャンセル／エラー（return_url）</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- フッター領域 -->
+  <footer class="mock-footer">
+    <p>DNP分散型ID管理プラットフォーム CATRINA®</p>
+  </footer>
+</body>
+</html>
