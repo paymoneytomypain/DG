@@ -11,7 +11,7 @@
   <!-- ヘッダー領域 -->
   <header class="mock-header">
     <div class="header-left">
-      <span class="title-sub">GitHub</span>
+      <span class="title-sub">DUMMY</span>
     </div>
     <div class="header-right">
       <div class="catrina-logo">
@@ -27,12 +27,13 @@
 
     <p class="mock-description">
       本来はここでQRコード読み取り・スマホアプリとの連携による本人確認プロセスが行われますが、現在スマホ連携ができないため省略しています。<br>
-      下のボタンで、検証結果を手動でシミュレートしてください。 ＜本Pageはﾋﾟﾝﾁイン・ｱｳﾄ,左右ｽﾜｲﾌﾟ非対応です＞
+      結果を確認する場合は、5秒待たずに下のボタンから手動でシミュレートできます。＜本Pageはﾋﾟﾝﾁイン・ｱｳﾄ,左右ｽﾜｲﾌﾟ非対応です＞
     </p>
 
     <!-- QRコードカード領域 -->
     <div class="mock-qr-card">
       <div class="qr-image-wrapper">
+        <!-- 注意: 画像をそのままアップロードした場合は、パスを "qr-code.png" に修正しています -->
         <img src="qr-code.png" alt="QR Code" class="mock-qr-img">
       </div>
       <div class="qr-instruction">
@@ -69,5 +70,22 @@
   <footer class="mock-footer">
     <p>DNP分散型ID管理プラットフォーム CATRINA®</p>
   </footer>
+
+  <!-- 自動遷移用のスクリプトを追加 -->
+  <script>
+    // 1.5秒（1500ミリ秒）後に処理を実行
+    setTimeout(function() {
+      // 0, 1, 2 のいずれかの数字をランダムに生成
+      const randomNum = Math.floor(Math.random() * 3);
+
+      if (randomNum === 0) {
+        // 3回に1回（約33%）の確率で return.html に遷移
+        window.location.href = 'http://127.0.0.1:2005/return.html?lang=en_US';
+      } else {
+        // 残りの2回（約67%）の確率で success.html に遷移
+        window.location.href = 'http://127.0.0.1:2005/success.html?lang=en_US';
+      }
+    }, 1500);
+  </script>
 </body>
 </html>
