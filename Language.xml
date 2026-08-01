@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<language-config>
+  <!-- ダイアログ -->
+  <message name="OneMomentPlease">
+    <language name="en_US">Processing... Please wait…</language>
+    <language name="ja_JP">ただいま、手続きをしております。<br />しばらくお待ちください・・・</language>
+    <language name="zh_CHT">正在辦理手續。<br />敬請稍候……</language>
+    <language name="zh_CHS">正在办理手续。<br />请稍等……</language>
+    <language name="ko_KR">지금 수속 중입니다.<br />잠시 기다려 주십시오……</language>
+  </message>
+
+  <!-- return.html: タイトル -->
+  <message name="CancelledOrErrorTitle">
+    <language name="en_US">✖ Cancelled or an Error Occurred</language>
+    <language name="ja_JP">✖ キャンセルまたはエラーが発生しました</language>
+    <language name="zh_CHT">✖ 已取消或發生錯誤</language>
+    <language name="zh_CHS">✖ 已取消或发生错误</language>
+    <language name="ko_KR">✖ 취소되었거나 오류가 발생했습니다</language>
+  </message>
+
+  <!-- return.html: 本文 -->
+  <message name="CancelledOrErrorMessage">
+    <language name="en_US">Reached return_url.<br />CATRINA redirects the user to this URL when the process is cancelled or an error occurs.</language>
+    <language name="ja_JP">return_url に到達しました。<br />本来はCATRINAが、キャンセル時やエラー時にこのURLへユーザーをリダイレクトします。</language>
+    <language name="zh_CHT">已到達 return_url。<br />原本CATRINA會在使用者取消或發生錯誤時，將使用者重新導向至此URL。</language>
+    <language name="zh_CHS">已到达 return_url。<br />原本CATRINA会在用户取消或发生错误时，将用户重定向至此URL。</language>
+    <language name="ko_KR">return_url 에 도달했습니다.<br />원래 CATRINA가 취소 또는 오류 발생 시 이 URL로 사용자를 리디렉션합니다.</language>
+  </message>
+
+  <!-- return.html: 確認ボタン -->
+  <message name="ConfirmButton">
+    <language name="en_US">Confirm</language>
+    <language name="ja_JP">確認</language>
+    <language name="zh_CHT">確認</language>
+    <language name="zh_CHS">确认</language>
+    <language name="ko_KR">확인</language>
+  </message>
+</language-config>

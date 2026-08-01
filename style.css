@@ -1,0 +1,231 @@
+/* ====================================
+   index.html (モック画面) 専用スタイル
+==================================== */
+:root {
+  --dnp-blue: #0033a0;
+  --dnp-blue-dark: #002277;
+  --dnp-bg-top: #eef4fc;
+  --dnp-bg-mid: #f5f8fd;
+  --dnp-bg-bottom: #ffffff;
+}
+
+body.mock-page-body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  font-family: "Segoe UI", "Noto Sans JP", sans-serif;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: #f7f9fc;
+  position: relative;
+}
+
+/* 背景グラデーション */
+body.mock-page-body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 50% 30%, rgba(0, 81, 186, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, var(--dnp-bg-top) 0%, var(--dnp-bg-mid) 50%, var(--dnp-bg-bottom) 100%);
+}
+
+/* ヘッダー */
+.mock-header {
+  width: 100%;
+  padding: 16px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.title-sub {
+  display: inline-block;
+  font-size: 24px;
+  color: #ffffff;
+  background-color: #002277;
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.catrina-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catrina-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00b4db, #0083b0);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Georgia", serif;
+  font-style: italic;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.catrina-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--dnp-blue);
+  letter-spacing: 0.08em;
+}
+
+/* メインコンテンツ容器 */
+.mock-main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 1200px;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.mock-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--dnp-blue);
+  margin: 0 0 8px 0;
+}
+
+.mock-description {
+  color: #444;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+/* QRコードカード */
+.mock-qr-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 40px;
+  box-shadow: 0 10px 30px rgba(0, 51, 160, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 51, 160, 0.08);
+}
+
+.qr-image-wrapper {
+  width: 220px;
+  height: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mock-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-instruction {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--dnp-blue);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.phone-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* ボタンエリア */
+.mock-button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  width: 100%;
+}
+
+.mock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 420px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-sizing: border-box;
+}
+
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* 成功ボタン（青べた塗り） */
+.mock-btn.success {
+  background-color: var(--dnp-blue);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 51, 160, 0.25);
+}
+
+.mock-btn.success:hover {
+  background-color: var(--dnp-blue-dark);
+  transform: translateY(-2px);
+}
+
+/* キャンセル/エラーボタン（白背景・青枠） */
+.mock-btn.cancel {
+  background-color: #ffffff;
+  color: var(--dnp-blue);
+  border: 2px solid var(--dnp-blue);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mock-btn.cancel:hover {
+  background-color: #f0f4fc;
+  transform: translateY(-2px);
+}
+
+/* フッター領域 */
+.mock-footer {
+  width: 100%;
+  background-color: #041638;
+  color: #ffffff;
+  padding: 14px 40px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.mock-footer p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
