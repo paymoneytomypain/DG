@@ -6,28 +6,31 @@
 <title>CATRINA 本人確認（モック）</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* 既存のstyle.cssより優先して時計を右上に強制表示させるための指定 */
+  /* ヘッダー全体の設定 */
   .mock-header {
     display: flex !important;
     justify-content: space-between !important;
-    align-items: center !important;
+    align-items: flex-start !important; /* 上揃えにしてロゴと時計を綺麗に並べる */
   }
   
+  /* 右側エリアを縦並び（Column）にし、右寄せにする設定 */
   .header-right {
     display: flex !important;
-    align-items: center !important;
-    gap: 15px !important;
+    flex-direction: column !important;
+    align-items: flex-end !important; /* ロゴと時計を右端に揃える */
+    gap: 6px !important;               /* ロゴと時計の上下の隙間 */
   }
 
+  /* 時計デザインの調整 */
   .header-clock {
     font-family: Consolas, Monaco, monospace;
-    font-size: 1.1rem;
+    font-size: 0.95rem;                /* ロゴの下に収まりやすいよう少しスッキリ指定 */
     font-weight: bold;
     color: #24292f;
     background-color: #f6f8fa;
     border: 1px solid #d0d7de;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 2px 8px;
+    border-radius: 4px;
     white-space: nowrap;
     display: inline-block !important;
   }
@@ -41,13 +44,14 @@
       <span class="title-sub">GitHub</span>
     </div>
     <div class="header-right">
-      <!-- 右上の時計表示エリア（ロゴの左側に配置） -->
-      <div id="realtime-clock" class="header-clock">--:--:--</div>
-
+      <!-- 上：ロゴ -->
       <div class="catrina-logo">
         <span class="catrina-icon">C</span>
         <span class="catrina-text">CATRINA Identity</span>
       </div>
+
+      <!-- 下：時計 -->
+      <div id="realtime-clock" class="header-clock">--:--:--</div>
     </div>
   </header>
 
@@ -97,7 +101,7 @@
 
   <!-- フッター領域 -->
   <footer class="mock-footer">
-    <p>DNP分散型ID管理プラットフォーム CATRINA® ←こちらはモックですので、何か問題が発生した場合も、開発者側の責任と決めつけないようお願いいたします
+    <p>DNP分散型ID管理プラットフォーム CATRINA® ←こちらはモックですので、何か問題が発生した場合も、開発者側の責任と決めつけないようお願いいたします。
     </p>
   </footer>
 
