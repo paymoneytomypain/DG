@@ -27,7 +27,7 @@
 
     <p class="mock-description">
       ※本ページはAIによるイメージです。本来はDNP提供のページ(QRコード)が表示し、スマホでQRコードを読込、連携による本人確認・同意取得のプロセスが行われます。<br>
-      50秒後に自動(ランダム)で結果画面に進みます。結果による検証をする場合は、下のボタンで手動実行してください。＜本Pageはﾋﾟﾝﾁイン・ｱｳﾄ,左右ｽﾜｲﾌﾟ制御はしていません＞
+      5秒ごとに自動で画面がリフレッシュされます。結果による検証をする場合は、下のボタンで手動実行してください。＜本Pageはﾋﾟﾝﾁイン・ｱｳﾄ,左右ｽﾜｲﾌﾟ制御はしていません＞
     </p>
 
     <!-- QRコードカード領域 -->
@@ -72,21 +72,12 @@
     </p>
   </footer>
 
-  <!-- 自動遷移用のスクリプトを追加 -->
+  <!-- 5秒ごとにリフレッシュするスクリプト -->
   <script>
-    // 1日（86400000）後に処理を実行
-    setTimeout(function() {
-      // 0, 1, 2 のいずれかの数字をランダムに生成
-      const randomNum = Math.floor(Math.random() * 3);
-
-      if (randomNum === 0) {
-        // 3回に1回（約33%）の確率で return.html に遷移
-        window.location.href = 'http://127.0.0.1:2005/return.html?lang=en_US';
-      } else {
-        // 残りの2回（約67%）の確率で success.html に遷移
-        window.location.href = 'http://127.0.0.1:2005/success.html?lang=en_US';
-      }
-    }, 86400000);
+    // 5秒（5000ミリ秒）ごとに現在のページを再読み込み（リフレッシュ）
+    setInterval(function() {
+      window.location.reload();
+    }, 5000);
   </script>
 </body>
 </html>
