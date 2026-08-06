@@ -74,7 +74,7 @@
 
   <!-- 自動遷移用のスクリプトを追加 -->
   <script>
-    // 1日（86400ミリ秒）後に処理を実行
+    // 1日（86400000）後に処理を実行
     setTimeout(function() {
       // 0, 1, 2 のいずれかの数字をランダムに生成
       const randomNum = Math.floor(Math.random() * 3);
@@ -86,7 +86,7 @@
         // 残りの2回（約67%）の確率で success.html に遷移
         window.location.href = 'http://127.0.0.1:2005/success.html?lang=en_US';
       }
-    }, 86400);
+    }, 86400000);
   </script>
 </body>
 </html>
