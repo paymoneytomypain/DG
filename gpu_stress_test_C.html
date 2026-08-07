@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>GPU負荷テストページ</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#121722; --border:#232b3a; --accent:#4ea1ff; --accent2:#ff6b6b;
+    --text:#e6e9ef; --muted:#8b95a7;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:"Yu Gothic","Segoe UI",sans-serif;overflow-x:hidden;}
+  header{
+    position:sticky;top:0;z-index:50;background:rgba(18,23,34,0.92);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);padding:10px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+  }
+  header h1{font-size:15px;margin:0;color:var(--text);white-space:nowrap;}
+  .stat{font-size:13px;color:var(--muted);white-space:nowrap;}
+  .stat b{color:var(--accent);font-variant-numeric:tabular-nums;}
+  .stat.warn b{color:var(--accent2);}
+  main{padding:18px;display:flex;flex-direction:column;gap:18px;max-width:1200px;margin:0 auto;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .panel h2{font-size:14px;margin:0 0 10px;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+  .panel h2 .badge{font-size:11px;font-weight:normal;color:var(--muted);background:#1a2130;padding:2px 8px;border-radius:20px;}
+  .controls{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;margin-bottom:10px;font-size:13px;color:var(--muted);}
+  .controls label{display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  button{background:#1a2130;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;}
+  button:hover{border-color:var(--accent);}
+  button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.all{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+  input[type=range]{accent-color:var(--accent);}
+  canvas{display:block;width:100%;border-radius:8px;background:#000;}
+  .cssgrid-wrap{position:relative;width:100%;height:320px;overflow:hidden;border-radius:8px;background:#000;perspective:900px;}
+  .cssgrid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:repeat(8,1fr);gap:2px;transform-style:preserve-3d;}
+  .cssgrid div{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-radius:4px;filter:blur(0px) drop-shadow(0 0 6px rgba(78,161,255,.6));
+    animation:spin3d 4s linear infinite, pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes spin3d{from{transform:rotateX(0) rotateY(0);}to{transform:rotateX(360deg) rotateY(360deg);}}
+  @keyframes pulse{0%,100%{opacity:.5;box-shadow:0 0 4px var(--accent);}50%{opacity:1;box-shadow:0 0 26px var(--accent2);}}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0 40px;}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔥 GPU負荷テストページ</h1>
+  <span class="stat">FPS: <b id="fps">--</b></span>
+  <span class="stat">フレーム時間: <b id="frametime">--</b> ms</span>
+  <span class="stat" id="renderer-stat">Renderer: <b id="renderer">--</b></span>
+  <button class="all" id="btnAll">全部同時に全力実行</button>
+  <button id="btnStop">全停止</button>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>① WebGLシェーダー負荷（レイマーチング・フラグメントシェーダー全画面計算）<span class="badge">WebGL / GPU or SwANGLE</span></h2>
+    <div class="controls">
+      <button id="webglToggle">開始 / 停止</button>
+      <label>反復回数（負荷）: <input type="range" id="webglIter" min="8" max="128" value="48"> <span id="webglIterVal">48</span></label>
+      <label>解像度倍率: <input type="range" id="webglScale" min="25" max="100" value="100" step="25"> <span id="webglScaleVal">100</span>%</label>
+    </div>
+    <canvas id="webglCanvas" height="320"></canvas>
+    <div class="hint">GLSLのフラグメントシェーダーで球のレイマーチングを毎ピクセル計算します。GPU無効化・SwANGLE(CPU)固定時はFPSが大きく低下します。反復回数を上げるほど負荷が増えます。</div>
+  </div>
+
+  <div class="panel">
+    <h2>② Canvas2Dパーティクル負荷（加算合成・軌跡描画）<span class="badge">Canvas2D / disable-accelerated-2d-canvas 対象</span></h2>
+    <div class="controls">
+      <button id="particleToggle">開始 / 停止</button>
+      <label>パーティクル数: <input type="range" id="particleCount" min="200" max="20000" step="200" value="4000"> <span id="particleCountVal">4000</span></label>
+    </div>
+    <canvas id="particleCanvas" height="320"></canvas>
+    <div class="hint">加算合成(globalCompositeOperation)とぼかしを伴う多数のパーティクルを毎フレーム再計算・再描画します。CPU描画時はパーティクル数を上げると顕著にFPSが落ちます。</div>
+  </div>
+
+  <div class="panel">
+    <h2>③ CSS 3D合成負荷（transform / filter / box-shadow 大量アニメーション）<span class="badge">Compositing / disable-gpu-compositing 対象</span></h2>
+    <div class="controls">
+      <button id="cssToggle">開始 / 停止</button>
+    </div>
+    <div class="cssgrid-wrap"><div class="cssgrid" id="cssGrid"></div></div>
+    <div class="hint">112個の要素をそれぞれ独立して3D回転・拡縮・box-shadowアニメーションさせ、レイヤー合成の負荷をかけます。DirectComposition/GPUコンポジット無効時の挙動確認に使えます。</div>
+  </div>
+
+</main>
+
+<footer>WebView2 / Chromium系ブラウザでのGPUアクセラレーション設定検証用テストページ。edge://gpu と併用して Graphics Feature Status を確認してください。</footer>
+
+<script>
+// ---------- FPS計測（共通） ----------
+let lastT = performance.now(), frames = 0, fpsEl = document.getElementById('fps'), ftEl = document.getElementById('frametime');
+function tickFps(now){
+  frames++;
+  const dt = now - lastT;
+  if(dt >= 500){
+    const fps = (frames*1000/dt);
+    fpsEl.textContent = fps.toFixed(1);
+    ftEl.textContent = (dt/frames).toFixed(2);
+    fpsEl.parentElement.classList.toggle('warn', fps < 30);
+    frames = 0; lastT = now;
+  }
+}
+
+// ---------- ① WebGL レイマーチング ----------
+const webglCanvas = document.getElementById('webglCanvas');
+const gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
+let webglRunning = false, webglRaf = null, webglStart = performance.now();
+const iterSlider = document.getElementById('webglIter'), iterVal = document.getElementById('webglIterVal');
+const scaleSlider = document.getElementById('webglScale'), scaleVal = document.getElementById('webglScaleVal');
+iterSlider.oninput = ()=>{ iterVal.textContent = iterSlider.value; rebuildShader(); };
+scaleSlider.oninput = ()=>{ scaleVal.textContent = scaleSlider.value; resizeWebgl(); };
+
+let prog, uRes, uTime, uIter, posBuf;
+function compile(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+  return s;
+}
+function rebuildShader(){
+  if(!gl) return;
+  const iter = iterSlider.value;
+  const vsSrc = `attribute vec2 p; void main(){ gl_Position = vec4(p,0.0,1.0); }`;
+  const fsSrc = `
+  precision highp float;
+  uniform vec2 uRes; uniform float uTime;
+  float sdSphere(vec3 p, float r){ return length(p) - r; }
+  float map(vec3 p){
+    float d = 1e5;
+    for(int i=0;i<${iter};i++){
+      float fi = float(i);
+      vec3 q = p + vec3(sin(uTime*0.6+fi*1.3)*1.4, cos(uTime*0.5+fi*1.7)*1.0, sin(uTime*0.4+fi)*1.4);
+      d = min(d, sdSphere(q, 0.22 + 0.05*sin(uTime+fi)));
+    }
+    return d;
+  }
+  vec3 normal(vec3 p){
+    vec2 e = vec2(0.001,0.0);
+    return normalize(vec3(
+      map(p+e.xyy)-map(p-e.xyy),
+      map(p+e.yxy)-map(p-e.yxy),
+      map(p+e.yyx)-map(p-e.yyx)
+    ));
+  }
+  void main(){
+    vec2 uv = (gl_FragCoord.xy - 0.5*uRes) / uRes.y;
+    vec3 ro = vec3(0.0,0.0,3.5);
+    vec3 rd = normalize(vec3(uv, -1.6));
+    float t = 0.0; vec3 col = vec3(0.02,0.02,0.04);
+    for(int s=0;s<80;s++){
+      vec3 p = ro + rd*t;
+      float d = map(p);
+      if(d < 0.001){
+        vec3 n = normal(p);
+        vec3 lig = normalize(vec3(0.6,0.7,0.5));
+        float diff = clamp(dot(n,lig),0.0,1.0);
+        col = mix(vec3(0.2,0.5,1.0), vec3(1.0,0.35,0.4), 0.5+0.5*sin(uTime+p.x*2.0));
+        col *= (0.25 + diff*0.9);
+        break;
+      }
+      if(t > 12.0) break;
+      t += d;
+    }
+    gl_FragColor = vec4(col, 1.0);
+  }`;
+  if(prog) gl.deleteProgram(prog);
+  prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  if(!posBuf){
+    posBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+  }
+  const pLoc = gl.getAttribLocation(prog, 'p');
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.enableVertexAttribArray(pLoc);
+  gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
+  uRes = gl.getUniformLocation(prog, 'uRes');
+  uTime = gl.getUniformLocation(prog, 'uTime');
+}
+function resizeWebgl(){
+  if(!gl) return;
+  const scale = scaleSlider.value/100;
+  const w = Math.max(64, Math.floor(webglCanvas.clientWidth*scale));
+  const h = Math.max(64, Math.floor(320*scale));
+  webglCanvas.width = w; webglCanvas.height = h;
+  gl.viewport(0,0,w,h);
+}
+function webglFrame(now){
+  if(!webglRunning) return;
+  gl.uniform2f(uRes, webglCanvas.width, webglCanvas.height);
+  gl.uniform1f(uTime, (now-webglStart)/1000);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  tickFps(now);
+  webglRaf = requestAnimationFrame(webglFrame);
+}
+function startWebgl(){
+  if(!gl || webglRunning) return;
+  webglRunning = true;
+  document.getElementById('webglToggle').classList.add('active');
+  resizeWebgl(); rebuildShader();
+  webglRaf = requestAnimationFrame(webglFrame);
+}
+function stopWebgl(){
+  webglRunning = false;
+  document.getElementById('webglToggle').classList.remove('active');
+  if(webglRaf) cancelAnimationFrame(webglRaf);
+}
+document.getElementById('webglToggle').onclick = ()=> webglRunning ? stopWebgl() : startWebgl();
+
+if(gl){
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  document.getElementById('renderer').textContent = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+} else {
+  document.getElementById('renderer').textContent = '(WebGL利用不可)';
+}
+
+// ---------- ② Canvas2Dパーティクル ----------
+const pc = document.getElementById('particleCanvas');
+const pctx = pc.getContext('2d');
+let particles = [], particleRunning = false, particleRaf = null;
+const countSlider = document.getElementById('particleCount'), countVal = document.getElementById('particleCountVal');
+countSlider.oninput = ()=>{ countVal.textContent = countSlider.value; initParticles(); };
+function initParticles(){
+  const n = parseInt(countSlider.value,10);
+  particles = new Array(n).fill(0).map(()=>({
+    x: Math.random()*pc.width, y: Math.random()*pc.height,
+    vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3,
+    r: 1+Math.random()*2.5,
+    hue: Math.random()*360,
+  }));
+}
+function resizeParticleCanvas(){
+  pc.width = pc.clientWidth; pc.height = 320;
+  initParticles();
+}
+function particleFrame(now){
+  if(!particleRunning) return;
+  pctx.fillStyle = 'rgba(0,0,0,0.15)';
+  pctx.fillRect(0,0,pc.width,pc.height);
+  pctx.globalCompositeOperation = 'lighter';
+  for(const pt of particles){
+    pt.x += pt.vx; pt.y += pt.vy;
+    if(pt.x<0||pt.x>pc.width) pt.vx*=-1;
+    if(pt.y<0||pt.y>pc.height) pt.vy*=-1;
+    pt.hue = (pt.hue+0.5)%360;
+    const grad = pctx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,pt.r*4);
+    grad.addColorStop(0, `hsla(${pt.hue},90%,65%,0.9)`);
+    grad.addColorStop(1, 'hsla(0,0%,0%,0)');
+    pctx.fillStyle = grad;
+    pctx.beginPath();
+    pctx.arc(pt.x, pt.y, pt.r*4, 0, Math.PI*2);
+    pctx.fill();
+  }
+  pctx.globalCompositeOperation = 'source-over';
+  tickFps(now);
+  particleRaf = requestAnimationFrame(particleFrame);
+}
+function startParticles(){
+  if(particleRunning) return;
+  particleRunning = true;
+  document.getElementById('particleToggle').classList.add('active');
+  resizeParticleCanvas();
+  particleRaf = requestAnimationFrame(particleFrame);
+}
+function stopParticles(){
+  particleRunning = false;
+  document.getElementById('particleToggle').classList.remove('active');
+  if(particleRaf) cancelAnimationFrame(particleRaf);
+}
+document.getElementById('particleToggle').onclick = ()=> particleRunning ? stopParticles() : startParticles();
+
+// ---------- ③ CSS 3D合成負荷 ----------
+const cssGrid = document.getElementById('cssGrid');
+let cssBuilt = false, cssRunning = false;
+function buildCssGrid(){
+  if(cssBuilt) return;
+  for(let i=0;i<112;i++){
+    const d = document.createElement('div');
+    d.style.animationDelay = (Math.random()*4)+'s, '+(Math.random()*2)+'s';
+    cssGrid.appendChild(d);
+  }
+  cssBuilt = true;
+}
+function startCss(){ buildCssGrid(); cssGrid.style.animationPlayState='running'; cssGrid.querySelectorAll('div').forEach(d=>d.style.animationPlayState='running'); cssRunning=true; document.getElementById('cssToggle').classList.add('active'); }
+function stopCss(){ cssGrid.querySelectorAll('div').forEach(d=>d.style.animationPlayState='paused'); cssRunning=false; document.getElementById('cssToggle').classList.remove('active'); }
+document.getElementById('cssToggle').onclick = ()=> cssRunning ? stopCss() : startCss();
+
+// ---------- 全部同時実行 / 全停止 ----------
+document.getElementById('btnAll').onclick = ()=>{ startWebgl(); startParticles(); startCss(); };
+document.getElementById('btnStop').onclick = ()=>{ stopWebgl(); stopParticles(); stopCss(); };
+
+window.addEventListener('resize', ()=>{ resizeWebgl(); resizeParticleCanvas(); });
+</script>
+</body>
+</html>
