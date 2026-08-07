@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebView2 GPU無効化＆描画負荷検証ツール</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 8px; font-size: 1.4rem; }
+        p.desc { color: #64748b; margin-bottom: 20px; font-size: 0.85rem; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .card h2 { margin-top: 0; font-size: 1.05rem; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        .status-cpu { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-gpu { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status-unknown { background-color: #f1f5f9; color: #475569; }
+
+        .info-list { font-size: 0.82rem; color: #334155; margin-top: 8px; }
+        .info-list div { margin-bottom: 4px; word-break: break-all; }
+
+        /* 負荷テスト領域 */
+        .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .btn {
+            background: #2563eb; color: white; border: none; padding: 8px 16px;
+            border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .btn-stop { background: #dc2626; }
+        .btn-stop:hover { background: #b91c1c; }
+        
+        .metrics { font-size: 1.1rem; font-weight: bold; color: #0284c7; margin-bottom: 8px; }
+        canvas.stress-canvas {
+            border: 1px solid #cbd5e1;
+            background: #000;
+            display: block;
+            width: 100%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>WebView2 GPU無効化 判定＆描画負荷検証ツール</h1>
+    <p class="desc">GPU無効化（CPU化）の適用状態を確認し、高負荷描画時のパフォーマンス（FPS）を測定します。</p>
+
+    <div class="grid">
+        <!-- 1. WebGL レンダラー判定 -->
+        <div class="card">
+            <h2>1. GPU無効化 判定結果</h2>
+            <div id="webgl-status" class="status-badge status-unknown">判定中...</div>
+            <div class="info-list" id="webgl-info"></div>
+        </div>
+
+        <!-- 2. システム環境 -->
+        <div class="card">
+            <h2>2. 実行環境</h2>
+            <div class="info-list" id="sys-info"></div>
+        </div>
+    </div>
+
+    <!-- 3. 描画負荷テスト（WebGL & Canvas2D） -->
+    <div class="card">
+        <h2>3. 描画高負荷（ストレス）テスト</h2>
+        <div class="controls">
+            <button id="toggle-btn" class="btn" onclick="toggleStressTest()">高負荷テスト開始</button>
+            <label style="font-size: 0.85rem;">
+                オブジェクト数: 
+                <select id="object-count" onchange="resetStressTest()">
+                    <option value="1000">1,000 個 (軽量)</option>
+                    <option value="5000" selected>5,000 個 (中負荷)</option>
+                    <option value="15000">15,000 個 (重負荷)</option>
+                    <option value="30000">30,000 個 (超重負荷)</option>
+                </select>
+            </label>
+        </div>
+        <div class="metrics">
+            リアルタイムフレームレート: <span id="fps-counter">0</span> FPS
+        </div>
+        <canvas id="stress-canvas" class="stress-canvas" width="800" height="400"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            checkWebGL();
+            checkSystemInfo();
+            initStressTest();
+        });
+
+        // --- 1. WebGLによるGPU無効化判定 ---
+        function checkWebGL() {
+            const statusEl = document.getElementById("webgl-status");
+            const infoEl = document.getElementById("webgl-info");
+            
+            const canvas = document.createElement("canvas");
+            const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+            if (!gl) {
+                statusEl.textContent = "✅ WebGL 完全停止 (CPU化成功)";
+                statusEl.className = "status-badge status-cpu";
+                infoEl.innerHTML = "<div>--disable-gpu 等により WebGL コンテキストが無効化されています。</div>";
+                return;
+            }
+
+            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+            let vendor = "不明", renderer = "不明";
+
+            if (debugInfo) {
+                vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            }
+
+            infoEl.innerHTML = `
+                <div><strong>Vendor:</strong> ${vendor}</div>
+                <div><strong>Renderer:</strong> ${renderer}</div>
+            `;
+
+            // SwiftShader, Software, Google Inc. 等が含まれていればCPUフォールバックに成功
+            const isSoftware = /SwiftShader|Software|Google Inc\.|ANGLE \(Google/i.test(renderer);
+
+            if (isSoftware) {
+                statusEl.textContent = "✅ CPU描画中 (SwiftShader / Software)";
+                statusEl.className = "status-badge status-cpu";
+            } else {
+                statusEl.textContent = "⚠️ GPUアクセラレーション動作中";
+                statusEl.className = "status-badge status-gpu";
+            }
+        }
+
+        function checkSystemInfo() {
+            const infoEl = document.getElementById("sys-info");
+            infoEl.innerHTML = `
+                <div><strong>User Agent:</strong> ${navigator.userAgent}</div>
+                <div><strong>CPU論理コア数:</strong> ${navigator.hardwareConcurrency || '取得不可'}</div>
+            `;
+        }
+
+        // --- 2. 描画負荷テスト（大量パーティクル＆演算アニメーション） ---
+        let isRunning = false;
+        let animationFrameId = null;
+        let particles = [];
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        const canvas = document.getElementById("stress-canvas");
+        const ctx = canvas.getContext("2d");
+
+        function initParticles(count) {
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    size: Math.random() * 3 + 1,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`
+                });
+            }
+        }
+
+        function render() {
+            if (!isRunning) return;
+
+            // FPS計測
+            const now = performance.now();
+            frameCount++;
+            if (now - lastFrameTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                document.getElementById("fps-counter").textContent = fps;
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+
+            // 描画更新処理（CPU演算＋描画呼び出し）
+            ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; // 残像効果
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const count = particles.length;
+            for (let i = 0; i < count; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.width) p.vy *= -1;
+
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            }
+
+            animationFrameId = requestAnimationFrame(render);
+        }
+
+        function toggleStressTest() {
+            const btn = document.getElementById("toggle-btn");
+            if (isRunning) {
+                // 停止
+                isRunning = false;
+                cancelAnimationFrame(animationFrameId);
+                btn.textContent = "高負荷テスト開始";
+                btn.classList.remove("btn-stop");
+            } else {
+                // 開始
+                isRunning = true;
+                const count = parseInt(document.getElementById("object-count").value, 10);
+                initParticles(count);
+                lastFrameTime = performance.now();
+                frameCount = 0;
+                btn.textContent = "テスト停止";
+                btn.classList.add("btn-stop");
+                render();
+            }
+        }
+
+        function resetStressTest() {
+            if (isRunning) {
+                const count = parseInt(document.getElementById("object-count").value, 10);
+                initParticles(count);
+            }
+        }
+
+        function initStressTest() {
+            // 初期画面描画
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("「高負荷テスト開始」ボタンを押すと描画ループを開始します", canvas.width / 2, canvas.height / 2);
+        }
+    </script>
+</body>
+</html>
