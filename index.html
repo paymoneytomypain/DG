@@ -79,8 +79,9 @@
     </div>
 
     <!-- ボタンエリア -->
+    <!-- href は固定値ではなく、JS側で自分が呼ばれた時の ui_locales を引き継いで動的に組み立てる -->
     <div class="mock-button-group">
-      <button class="mock-btn success" onclick="location.href='http://127.0.0.1:2005/success.html?lang=en_US'">
+      <button id="successBtn" class="mock-btn success">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="9 11 12 14 22 4"></polyline>
@@ -88,7 +89,7 @@
         <span>検証成功（success_url）</span>
       </button>
 
-      <button class="mock-btn cancel" onclick="location.href='http://127.0.0.1:2005/return.html?lang=en_US'">
+      <button id="cancelBtn" class="mock-btn cancel">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -113,7 +114,7 @@
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
-      
+
       const clockElement = document.getElementById('realtime-clock');
       if (clockElement) {
         clockElement.textContent = `${hours}:${minutes}:${seconds}`;
@@ -123,6 +124,39 @@
     // 毎秒時計を更新＆初期呼び出し
     setInterval(updateClock, 1000);
     updateClock();
+
+    // ---------------------------------------------------------------
+    // このページ自身が呼び出された時のURL（例:
+    //   ?presentation_display_mode=auto&ui_locales=zh
+    // ）から ui_locales を読み取り、success_url / return_url の
+    // lang パラメータとしてそのまま引き回す。
+    // 固定値(en_US)に決め打ちしていたことが誤解の原因だったため、
+    // 受け取った値をそのまま転記するだけの単純な作りにしている。
+    // ---------------------------------------------------------------
+    (function setupButtonUrls() {
+      const DEFAULT_LANG = 'en_US'; // ui_localesが付与されていない場合のみのフォールバック
+
+      const params = new URLSearchParams(window.location.search);
+      const incomingLocale = params.get('ui_locales') || DEFAULT_LANG;
+
+      const successUrl = `http://127.0.0.1:2005/success.html?lang=${encodeURIComponent(incomingLocale)}`;
+      const returnUrl  = `http://127.0.0.1:2005/return.html?lang=${encodeURIComponent(incomingLocale)}`;
+
+      const successBtn = document.getElementById('successBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+
+      if (successBtn) {
+        successBtn.addEventListener('click', function () {
+          location.href = successUrl;
+        });
+      }
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', function () {
+          location.href = returnUrl;
+        });
+      }
+    })();
 
     // 5秒（5000ミリ秒）ごとの自動リフレッシュ
     setInterval(function() {
